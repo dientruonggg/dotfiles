@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+import sys
+import os
+from datetime import datetime
+
+TODO_FILE = os.path.expanduser("~/TODO.md")
+
+# ANSI Color Codes (Nord / Catppuccin / Caelestia compatible)
+CYAN = "\033[1;36m"
+MAGENTA = "\033[1;35m"
+GREEN = "\033[1;32m"
+YELLOW = "\033[1;33m"
+RED = "\033[1;31m"
+BLUE = "\033[1;34m"
+BOLD = "\033[1m"
+DIM = "\033[2m"
+RESET = "\033[0m"
+
+def get_erasmus_countdown():
+    target = datetime(2027, 2, 8)
+    now = datetime.now()
+    diff = (target - now).days
+    return max(0, diff)
+
+def display_dashboard():
+    if not os.path.exists(TODO_FILE):
+        print(f"{YELLOW}Chưa tìm thấy file {TODO_FILE}!{RESET}")
+        return
+
+    with open(TODO_FILE, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    today_str = datetime.now().strftime("%A, %d/%m/%Y")
+    days_left = get_erasmus_countdown()
+
+    print(f"\n{CYAN}┌── {BOLD}🚀 BIM'S MISSION CONTROL{RESET} {DIM}• {today_str}{RESET} {CYAN}────────────────────────{RESET}")
+    print(f"{CYAN}│{RESET}  {YELLOW}🇬🇷 Erasmus+ Countdown:{RESET} {BOLD}{days_left} ngày{RESET} tới ngày bay (08/02/2027)")
+    print(f"{CYAN}│{RESET}")
+
+    current_section = ""
+    task_id = 1
+
+    for line in lines:
+        line_clean = line.strip()
+        if line_clean.startswith("# 🎯 MỤC TIÊU LỚN"):
+            current_section = "GOALS"
+            print(f"{CYAN}│{RESET}  {MAGENTA}{BOLD}🎯 MỤC TIÊU LỚN:{RESET}")
+        elif line_clean.startswith("# ⚡ NHIỆM VỤ HÔM NAY"):
+            current_section = "DAILY"
+            print(f"{CYAN}│{RESET}")
+            print(f"{CYAN}│{RESET}  {GREEN}{BOLD}⚡ CHECKLIST HÔM NAY:{RESET}")
+        elif line_clean.startswith("# 📌 GHI CHÚ"):
+            current_section = "NOTES"
+            print(f"{CYAN}│{RESET}")
+            print(f"{CYAN}│{RESET}  {YELLOW}{BOLD}📌 LỜI NHẮC:{RESET}")
+        elif line_clean.startswith("- [ ]") or line_clean.startswith("- [x]"):
+            is_done = line_clean.startswith("- [x]")
+            text = line_clean[5:].strip()
+            if current_section == "DAILY":
+                if is_done:
+                    print(f"{CYAN}│{RESET}    {DIM}[✔] {task_id}. {text}{RESET}")
+                else:
+                    print(f"{CYAN}│{RESET}    {GREEN}[ ]{RESET} {BOLD}{task_id}.{RESET} {text}")
+                task_id += 1
+            elif current_section == "GOALS":
+                mark = f"{GREEN}✔{RESET}" if is_done else f"{YELLOW}○{RESET}"
+                print(f"{CYAN}│{RESET}    [{mark}] {text}")
+        elif line_clean.startswith("- \"") and current_section == "NOTES":
+            print(f"{CYAN}│{RESET}    {DIM}{line_clean[2:]}{RESET}")
+
+    print(f"{CYAN}└───────────────────────────────────────────────────────────────────{RESET}")
+    print(f" {DIM}💡 Chat với agy để update, hoặc gõ: {BOLD}todo done <số>{RESET}{DIM} | {BOLD}todo add <việc>{RESET}\n")
+
+def add_task(text):
+    if not os.path.exists(TODO_FILE):
+        return
+    with open(TODO_FILE, "r", encoding="utf-8") as f:
+        content = f.read()
+    
+    marker = "# ⚡ NHIỆM VỤ HÔM NAY (DAILY CHECKLIST)"
+    if marker in content:
+        parts = content.split(marker)
+        new_content = parts[0] + marker + f"\n- [ ] {text}" + parts[1]
+        with open(TODO_FILE, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        print(f"{GREEN}✔ Đã thêm task:{RESET} {text}")
+    else:
+        with open(TODO_FILE, "a", encoding="utf-8") as f:
+            f.write(f"\n- [ ] {text}\n")
+        print(f"{GREEN}✔ Đã thêm task:{RESET} {text}")
+
+def mark_done(task_num):
+    if not os.path.exists(TODO_FILE):
+        return
+    with open(TODO_FILE, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+    
+    current_section = ""
+    daily_count = 1
+    found = False
+    new_lines = []
+
+    for line in lines:
+        if line.startswith("# ⚡ NHIỆM VỤ HÔM NAY"):
+            current_section = "DAILY"
+            new_lines.append(line)
+        elif line.startswith("# 📌 GHI CHÚ") or line.startswith("# 🎯 MỤC TIÊU"):
+            current_section = ""
+            new_lines.append(line)
+        elif current_section == "DAILY" and (line.startswith("- [ ]") or line.startswith("- [x]")):
+            if daily_count == task_num:
+                new_lines.append(line.replace("- [ ]", "- [x]"))
+                found = True
+            else:
+                new_lines.append(line)
+            daily_count += 1
+        else:
+            new_lines.append(line)
+
+    if found:
+        with open(TODO_FILE, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+        print(f"{GREEN}✔ Đã hoàn thành task {task_num}! Làm tốt lắm!{RESET}")
+    else:
+        print(f"{RED}Không tìm thấy task số {task_num}!{RESET}")
+
+def main():
+    if len(sys.argv) == 1 or (len(sys.argv) == 2 and sys.argv[1] in ["show", "ls", "list"]):
+        display_dashboard()
+    elif sys.argv[1] == "add" and len(sys.argv) > 2:
+        add_task(" ".join(sys.argv[2:]))
+    elif sys.argv[1] == "done" and len(sys.argv) > 2:
+        try:
+            mark_done(int(sys.argv[2]))
+        except ValueError:
+            print(f"{RED}Vui lòng nhập số thứ tự task, vd: todo done 1{RESET}")
+    elif sys.argv[1] == "edit":
+        editor = os.environ.get("EDITOR", "codium")
+        os.system(f"{editor} {TODO_FILE}")
+    else:
+        print("Cách dùng:")
+        print("  todo             : Hiện bảng nhiệm vụ")
+        print("  todo add <text>  : Thêm nhiệm vụ hôm nay")
+        print("  todo done <số>   : Đánh dấu hoàn thành")
+        print("  todo edit        : Mở file TODO để sửa trực tiếp")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# ==============================================================================
+# window-switcher: Menu chuyển đổi cửa sổ nhanh (Alt + Tab UI) cho Hyprland
+# ==============================================================================
+
+# Lấy danh sách tất cả các cửa sổ đang mở trên toàn bộ hệ thống
+WINDOWS=$(hyprctl clients -j | jq -r '
+  .[] 
+  | select(.mapped == true and .title != "" and .title != "null") 
+  | "[\(.workspace.name)]  \(.class)  —  \(.title)\t\(.address)\t\(.workspace.id)"
+')
+
+if [ -z "$WINDOWS" ]; then
+    exit 0
+fi
+
+# Hiển thị menu Fuzzel
+SELECTED=$(echo -e "$WINDOWS" | fuzzel --dmenu --no-sort --width=65 --lines=10 --prompt="󰖲 Chuyển cửa sổ: ")
+
+if [ -n "$SELECTED" ]; then
+    ADDR=$(echo "$SELECTED" | awk -F'\t' '{print $2}')
+    WS=$(echo "$SELECTED" | awk -F'\t' '{print $3}')
+
+    if [ -n "$ADDR" ]; then
+        # Nếu ở workspace khác, nhảy workspace trước
+        if [ -n "$WS" ]; then
+            hyprctl dispatch "hl.dsp.focus({ workspace = \"$WS\" })"
+        fi
+        # Focus đúng cửa sổ theo địa chỉ
+        hyprctl dispatch "hl.dsp.focus({ window = \"address:$ADDR\" })"
+    fi
+fi

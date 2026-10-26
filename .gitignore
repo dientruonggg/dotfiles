@@ -1,8 +1,12 @@
 # ========================================================
 # SECURITY & SECRETS (NEVER COMMIT)
 # ========================================================
-*.local
 *.local.*
+*.bashrc.local
+*.local.sh
+*.local.bash
+*.local.fish
+*.local.env
 *.key
 *.pem
 *.token
@@ -30,8 +34,15 @@ shell-tokens.json
 __pycache__/
 .cache/
 .local/state/
-.local/share/
 node_modules/
+
+# Allow tracked .local directories
+!/.local/
+!/.local/bin/
+!/.local/bin/**
+!/.local/share/
+!/.local/share/fcitx5/
+!/.local/share/fcitx5/**
 
 # ========================================================
 # BROWSER / SYSTEM SESSIONS & HISTORY

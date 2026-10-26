@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+
+# ==============================================================================
+# display-switcher: Menu chuyển đổi chế độ màn hình (Super + P) cho Hyprland
+# Các chế độ tương tự Windows Win+P:
+# 1. Duplicate: Chiếu cùng màn hình laptop (rất hữu ích khi thuyết trình, dùng máy chiếu)
+# 2. Extend: Mở rộng màn hình (màn riêng biệt)
+# 3. Second screen only: Chỉ dùng máy chiếu / màn ngoài
+# 4. Laptop screen only: Chỉ dùng màn hình laptop
+# 5. Reset: Khôi phục lại cấu hình gốc
+# ==============================================================================
+
+# Màn hình laptop mặc định
+LAPTOP_MON="eDP-1"
+
+# Kiểm tra xem eDP-1 có tồn tại trong Hyprland không, nếu không lấy màn hình nội bộ đầu tiên
+if ! hyprctl monitors all -j | jq -e ".[] | select(.name == \"$LAPTOP_MON\")" >/dev/null 2>&1; then
+    DETECTED_LAPTOP=$(hyprctl monitors all -j | jq -r '[.[] | select(.name | test("^(eDP|LVDS)"))][0].name // empty' 2>/dev/null)
+    if [ -n "$DETECTED_LAPTOP" ]; then
+        LAPTOP_MON="$DETECTED_LAPTOP"
+    fi
+fi
+
+# Phát hiện màn hình ngoài
+EXTERNAL_MONS=()
+
+# 1. Quét từ sysfs DRM (phát hiện cả khi màn ngoài đang bị Hyprland disable)
+for s in /sys/class/drm/*/status; do
+    if [ -f "$s" ] && grep -qi "^connected" "$s"; then
+        mon_name=$(basename "$(dirname "$s")" | sed -E 's/^card[0-9]+-//')
+        if [[ "$mon_name" != "$LAPTOP_MON" && "$mon_name" != eDP* && "$mon_name" != LVDS* ]]; then
+            EXTERNAL_MONS+=("$mon_name")
+        fi
+    fi
+done
+
+# 2. Quét dự phòng từ hyprctl
+if [ ${#EXTERNAL_MONS[@]} -eq 0 ]; then
+    while IFS= read -r m; do
+        if [[ -n "$m" && "$m" != "$LAPTOP_MON" && "$m" != eDP* && "$m" != LVDS* ]]; then
+            EXTERNAL_MONS+=("$m")
+        fi
+    done < <(hyprctl monitors all -j | jq -r '.[].name' 2>/dev/null)
+fi
+
+# Loại bỏ trùng lặp
+mapfile -t EXTERNAL_MONS < <(printf "%s\n" "${EXTERNAL_MONS[@]}" | sort -u | grep -v '^$')
+
+# Nếu nhận tham số dòng lệnh trực tiếp (CLI mode)
+ACTION="${1:-}"
+
+if [ -z "$ACTION" ]; then
+    # Chưa truyền tham số -> Mở giao diện Fuzzel
+    if [ ${#EXTERNAL_MONS[@]} -gt 0 ]; then
+        PROMPT="󰍹 [${EXTERNAL_MONS[*]}]: "
+    else
+        PROMPT="󰍹 [Chờ cắm dây]: "
+    fi
+
+    OPTIONS="1. 󰍺  Duplicate     (Chiếu cùng màn hình laptop)\n2. 󰍹  Extend        (Mở rộng - Màn hình riêng)\n3. 󰍺  Second only   (Chỉ máy chiếu / Màn ngoài)\n4. 󰍹  Laptop only   (Chỉ màn hình laptop)\n5. 󰑓  Reset         (Khôi phục cấu hình mặc định)"
+
+    CHOICE=$(echo -e "$OPTIONS" | fuzzel --dmenu --no-sort --lines=5 --width=48 --prompt="$PROMPT")
+    [ -z "$CHOICE" ] && exit 0
+
+    case "$CHOICE" in
+        *"Duplicate"*)   ACTION="duplicate" ;;
+        *"Extend"*)      ACTION="extend" ;;
+        *"Second only"*) ACTION="second" ;;
+        *"Laptop only"*) ACTION="laptop" ;;
+        *"Reset"*)       ACTION="reset" ;;
+        *) exit 0 ;;
+    esac
+fi
+
+# Nếu chưa cắm màn hình ngoài nào, mặc định áp dụng cho HDMI-A-1 để khi cắm dây là nhận ngay
+TARGET_EXT_MONS=("${EXTERNAL_MONS[@]}")
+IS_PENDING=false
+if [ ${#TARGET_EXT_MONS[@]} -eq 0 ]; then
+    TARGET_EXT_MONS=("HDMI-A-1")
+    IS_PENDING=true
+fi
+
+reload_shell() {
+    # Khởi động lại Caelestia shell mượt mà để cập nhật thanh bar và giao diện
+    (sleep 0.2; qs -c caelestia kill 2>/dev/null; sleep 0.2; caelestia shell -d) &
+}
+
+case "$ACTION" in
+    duplicate|mirror)
+        # Bật màn hình laptop làm nguồn
+        hyprctl eval "hl.monitor({ output = '$LAPTOP_MON', mode = 'preferred', position = '0x0', scale = 1, disabled = false, mirror = '' })"
+        # Mirror màn hình laptop sang tất cả màn ngoài / máy chiếu
+        for ext in "${TARGET_EXT_MONS[@]}"; do
+            hyprctl eval "hl.monitor({ output = '$ext', mode = 'preferred', position = 'auto', scale = 1, disabled = false, mirror = '$LAPTOP_MON' })"
+        done
+
+        if [ "$IS_PENDING" = true ]; then
+            notify-send -u normal -i video-display "Màn hình" "Đã đặt chế độ: Duplicate\n(Sẵn sàng: Cắm dây HDMI vào máy chiếu là chiếu ngay)"
+        else
+            notify-send -u low -i video-display "Màn hình" "Đã chuyển sang chế độ: Duplicate (Chiếu cùng màn hình)"
+        fi
+        ;;
+
+    extend)
+        # Bật cả màn laptop và các màn ngoài riêng biệt, bỏ mirror
+        hyprctl eval "hl.monitor({ output = '$LAPTOP_MON', mode = 'preferred', position = '0x0', scale = 1, disabled = false, mirror = '' })"
+        for ext in "${TARGET_EXT_MONS[@]}"; do
+            hyprctl eval "hl.monitor({ output = '$ext', mode = 'preferred', position = 'auto', scale = 1, disabled = false, mirror = '' })"
+        done
+        hyprctl reload
+        reload_shell
+
+        if [ "$IS_PENDING" = true ]; then
+            notify-send -u normal -i video-display "Màn hình" "Đã đặt chế độ: Extend (Màn hình riêng biệt)\n(Chờ cắm dây)"
+        else
+            notify-send -u low -i video-display "Màn hình" "Đã chuyển sang chế độ: Extend (Mở rộng màn hình riêng)"
+        fi
+        ;;
+
+    second)
+        # Chỉ dùng màn ngoài / máy chiếu, tắt màn laptop
+        for ext in "${TARGET_EXT_MONS[@]}"; do
+            hyprctl eval "hl.monitor({ output = '$ext', mode = 'preferred', position = '0x0', scale = 1, disabled = false, mirror = '' })"
+        done
+        hyprctl eval "hl.monitor({ output = '$LAPTOP_MON', disabled = true })"
+        reload_shell
+
+        if [ "$IS_PENDING" = true ]; then
+            notify-send -u normal -i video-display "Màn hình" "Đã đặt chế độ: Chỉ màn hình ngoài\n(Cắm dây HDMI để sử dụng)"
+        else
+            notify-send -u low -i video-display "Màn hình" "Đã chuyển sang chế độ: Chỉ màn hình ngoài / Máy chiếu"
+        fi
+        ;;
+
+    laptop)
+        # Chỉ dùng màn hình laptop, tắt các màn ngoài
+        hyprctl eval "hl.monitor({ output = '$LAPTOP_MON', mode = 'preferred', position = '0x0', scale = 1, disabled = false, mirror = '' })"
+        for ext in "${TARGET_EXT_MONS[@]}"; do
+            hyprctl eval "hl.monitor({ output = '$ext', disabled = true })"
+        done
+        reload_shell
+        notify-send -u low -i video-display "Màn hình" "Đã chuyển sang chế độ: Chỉ màn hình laptop"
+        ;;
+
+    reset)
+        # Khôi phục toàn bộ cấu hình gốc của Hyprland
+        hyprctl reload
+        reload_shell
+        notify-send -u low -i video-display "Màn hình" "Đã khôi phục cấu hình màn hình mặc định"
+        ;;
+
+    *)
+        echo "Sử dụng: display-switcher [duplicate|extend|second|laptop|reset]"
+        exit 1
+        ;;
+esac

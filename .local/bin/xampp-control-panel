@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+# Cho phép root truy cập Xwayland nếu có xhost
+if command -v xhost >/dev/null 2>&1; then
+    xhost +SI:localuser:root >/dev/null 2>&1
+elif [ -n "$WAYLAND_DISPLAY" ]; then
+    notify-send -u normal "XAMPP" "Lưu ý: Nếu không mở được giao diện trên Wayland, hãy cài xorg-xhost:\nsudo pacman -S xorg-xhost" 2>/dev/null
+fi
+
+# Chạy XAMPP Control Panel qua pkexec (hỗ trợ Polkit GUI) hoặc sudo qua Foot
+if command -v pkexec >/dev/null 2>&1; then
+    pkexec env DISPLAY="${DISPLAY:-:0}" XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}" /opt/lampp/manager-linux-x64.run "$@"
+else
+    foot -e sudo /opt/lampp/manager-linux-x64.run "$@"
+fi
