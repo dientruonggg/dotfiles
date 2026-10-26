@@ -1,0 +1,166 @@
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "type": "file",
+        "source": "/home/bim/.config/fastfetch/daft_chafa.txt",
+        "padding": {
+            "top": 0,
+            "right": 1
+        }
+    },
+    "display": {
+        "separator": " ",
+        "color": "white",
+        "constants": ["\u001b[37m", "\u001b[38;5;16m", "\u001b[38;5;17m", "\u001b[38;5;18m"]
+    },
+    "modules": [
+        {
+            "type": "custom",
+            "key": "╭────────────────────────╮"
+        },
+        {
+            "type": "command",
+            "key": "│ {$2}{$1}  kernel",
+            "text": "uname -r | cut -d- -f1",
+            "format": "{$2}{>12}{$1} │"
+        },
+        {
+            "type": "command",
+            "key": "│   uptime",
+            "text": "uptime -p | sed -e 's/up //; s/ days\\?,/d/; s/ day\\?,/d/; s/ hours\\?,/h/; s/ hour\\?,/h/; s/ minutes\\?/m/; s/ minute\\?/m/'",
+            "format": "{>12} │"
+        },
+        {
+            "type": "command",
+            "key": "│ 󰌢  host  ",
+            "text": "echo 'ExpertBook'",
+            "format": "{>12} │"
+        },
+        {
+            "type": "wm",
+            "key": "│ {$2}{$1}  wm    ",
+            "format": "{$2}{1>12}{$1} │"
+        },
+        {
+            "type": "command",
+            "key": "│ 󰧨  de    ",
+            "text": "echo 'Wayland'",
+            "format": "{>12} │"
+        },
+        {
+            "type": "shell",
+            "key": "│ {$2}{$1}  shell ",
+            "format": "{$2}{pretty-name>12}{$1} │"
+        },
+        {
+            "type": "terminal",
+            "key": "│   term  ",
+            "format": "{pretty-name>12} │"
+        },
+        {
+            "type": "command",
+            "key": "│ {$3}{$1}  cpu   ",
+            "text": "lscpu | awk -F: '/Model name/{print $2}' | awk '{print $3}'",
+            "format": "{$3}{>12}{$1} │"
+        },
+        {
+            "type": "command",
+            "key": "│ {$3}󰢮{$1}  gpu   ",
+            "text": "echo 'Intel UHD'",
+            "format": "{$3}{>12}{$1} │"
+        },
+        {
+            "type": "command",
+            "key": "│ {$3}{$1}  mem   ",
+            "text": "free -m | awk 'NR==2{printf \"%.1f/%.1f GiB\",$3/1024,$2/1024}'",
+            "format": "{$3}{>12}{$1} │"
+        },
+        {
+            "type": "command",
+            "key": "│ 󰓡  swap  ",
+            "text": "free -m | awk 'NR==3{printf \"%.1f/%.1f GiB\",$3/1024,$2/1024}'",
+            "format": "{>12} │"
+        },
+        {
+            "type": "command",
+            "key": "│ 󰋊  disk  ",
+            "text": "df -h / | awk 'NR==2{printf \"%s/%s\",$3,$2}'",
+            "format": "{>12} │"
+        },
+        {
+            "type": "command",
+            "key": "│ 󰍹  disp  ",
+            "text": "echo '1920x1080'",
+            "format": "{>12} │"
+        },
+        {
+            "type": "command",
+            "key": "│ 󰁹  bat   ",
+            "text": "cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -n1 | sed 's/$/%/'",
+            "format": "{>12} │"
+        },
+        {
+            "type": "packages",
+            "key": "│   pkgs  ",
+            "format": "{all>12} │"
+        },
+        {
+            "type": "command",
+            "key": "│ {$2}{$1}  user  ",
+            "text": "echo $USER",
+            "format": "{$2}{>12}{$1} │"
+        },
+        {
+            "type": "command",
+            "key": "│   hname ",
+            "text": "hostnamectl hostname",
+            "format": "{>12} │"
+        },
+        {
+            "type": "os",
+            "key": "│ {$4}󰻀{$1}  distro",
+            "format": "{$4}{pretty-name>12}{$1} │"
+        },
+        {
+            "type": "command",
+            "key": "│   font  ",
+            "text": "echo 'JB Mono'",
+            "format": "{>12} │"
+        },
+        {
+            "type": "command",
+            "key": "│ 󰔎  theme ",
+            "text": "echo 'adw-gtk3'",
+            "format": "{>12} │"
+        },
+        {
+            "type": "command",
+            "key": "│ 󰀻  icons ",
+            "text": "echo 'Papirus-Dark'",
+            "format": "{>12} │"
+        },
+        {
+            "type": "command",
+            "key": "│ 󰷈  editor",
+            "text": "echo \"${EDITOR:-nvim}\"",
+            "format": "{>12} │"
+        },
+        {
+            "type": "command",
+            "key": "│ 󰗊  locale",
+            "text": "echo $LANG | cut -d. -f1",
+            "format": "{>12} │"
+        },
+        {
+            "type": "command",
+            "key": "│ 󰩟  ip    ",
+            "text": "ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i==\"src\") print $(i+1)}'",
+            "format": "{>12} │"
+        },
+        {
+            "type": "custom",
+            "key": "╰────────────────────────╯"
+        },
+        "break"
+    ]
+}

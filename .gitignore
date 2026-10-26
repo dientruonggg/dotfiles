@@ -1,0 +1,64 @@
+# ========================================================
+# SECURITY & SECRETS (NEVER COMMIT)
+# ========================================================
+*.local
+*.local.*
+*.key
+*.pem
+*.token
+*.secret
+*secrets*
+*credentials*
+.env
+.env.*
+.git-credentials
+fish_variables
+00-secrets.fish
+projects.json
+shell-tokens.json
+
+# ========================================================
+# TEMPORARY & CACHE FILES
+# ========================================================
+*.log
+*.tmp
+*.bak
+*.save
+*.swp
+*~
+*.orig
+__pycache__/
+.cache/
+.local/state/
+.local/share/
+node_modules/
+
+# ========================================================
+# BROWSER / SYSTEM SESSIONS & HISTORY
+# ========================================================
+*history*
+*.session
+*.sqlite
+*.sqlite3
+*.db
+*.ldb
+
+# ========================================================
+# LARGE BINARIES / MEDIA (Exclude raw/huge unneeded assets)
+# ========================================================
+*.tar.*
+*.zip
+*.iso
+*.bin
+daft_raw.jpg
+daft_test54.jpg
+daft_sharp.jpg
+daft_head_boosted.jpg
+daft_large_54.jpg
+daft_helmets.jpg
+
+# ========================================================
+# OS & EDITOR GENERATED
+# ========================================================
+.DS_Store
+Thumbs.db

@@ -1,0 +1,1 @@
+/home/bim/.config/caelestia/hypr-user.lua

@@ -1,0 +1,41 @@
+{
+    "appearance": {
+        "transparency": {
+            "enabled": true
+        }
+    },
+    "bar": {
+        "persistent": true,
+        "showOnHover": true
+    },
+    "border": {
+        "rounding": 0,
+        "thickness": 0
+    },
+    "dashboard": {
+        "enabled": true
+    },
+    "launcher": {
+        "enabled": true
+    },
+    "services": {
+        "useFahrenheit": false
+    },
+    "session": {
+        "commands": {
+            "hibernate": [
+                "suspend"
+            ]
+        },
+        "icons": {
+            "hibernate": "bedtime"
+        }
+    },
+    "sidebar": {
+        "dragThreshold": 80,
+        "enabled": true
+    },
+    "utilities": {
+        "enabled": true
+    }
+}
