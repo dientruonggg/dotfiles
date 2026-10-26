@@ -101,6 +101,16 @@ export_configs() {
         rsync -av "$HOME/.local/share/fcitx5/lotus/" "$DOTFILES_DIR/.local/share/fcitx5/lotus/"
     fi
 
+    # Sync Wallpapers (excluding Self and sbgui)
+    if [[ -d "$HOME/Pictures/Wallpapers" ]]; then
+        mkdir -p "$DOTFILES_DIR/Pictures/Wallpapers"
+        rsync -av --delete "$HOME/Pictures/Wallpapers/" "$DOTFILES_DIR/Pictures/Wallpapers/"
+    fi
+    if [[ -d "$HOME/Pictures/Momonga" ]]; then
+        mkdir -p "$DOTFILES_DIR/Pictures/Momonga"
+        rsync -av --delete "$HOME/Pictures/Momonga/" "$DOTFILES_DIR/Pictures/Momonga/"
+    fi
+
     echo "==> Export completed successfully!"
 }
 
