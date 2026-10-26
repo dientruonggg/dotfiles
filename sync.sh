@@ -95,6 +95,12 @@ export_configs() {
         fi
     done
 
+    # Sync Lotus input method dictionary/data
+    if [[ -d "$HOME/.local/share/fcitx5/lotus" ]]; then
+        mkdir -p "$DOTFILES_DIR/.local/share/fcitx5/lotus"
+        rsync -av "$HOME/.local/share/fcitx5/lotus/" "$DOTFILES_DIR/.local/share/fcitx5/lotus/"
+    fi
+
     echo "==> Export completed successfully!"
 }
 
@@ -118,6 +124,12 @@ install_configs() {
     if [[ -d "$DOTFILES_DIR/.local/bin" ]]; then
         rsync -av "$DOTFILES_DIR/.local/bin/" "$BIN_DIR/"
         chmod +x "$BIN_DIR"/* 2>/dev/null || true
+    fi
+
+    # Install Lotus data
+    if [[ -d "$DOTFILES_DIR/.local/share/fcitx5/lotus" ]]; then
+        mkdir -p "$HOME/.local/share/fcitx5/lotus"
+        rsync -av "$DOTFILES_DIR/.local/share/fcitx5/lotus/" "$HOME/.local/share/fcitx5/lotus/"
     fi
 
     echo "==> Installation completed!"
